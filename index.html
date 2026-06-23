@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Empire Outreach OS</title>
+  <style>
+    *{box-sizing:border-box}body{margin:0;background:#050505;color:#f5f5f5;font-family:Inter,Arial,sans-serif}main{max-width:1180px;margin:auto;padding:24px}.hero{padding:32px;border:1px solid #222;border-radius:28px;background:linear-gradient(145deg,#111,#050505);box-shadow:0 20px 70px rgba(255,255,255,.05)}h1{font-size:42px;margin:0 0 10px;letter-spacing:-1px}.muted{color:#aaa}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;margin-top:18px}.card{border:1px solid #222;border-radius:22px;background:#0b0b0b;padding:20px}.stat{font-size:34px;font-weight:800}.row{display:flex;gap:12px;flex-wrap:wrap}.btn{border:1px solid #fff;background:#fff;color:#000;border-radius:999px;padding:12px 18px;font-weight:800;cursor:pointer}.btn.dark{background:#111;color:#fff;border-color:#333}.btn:disabled{opacity:.5}input,textarea,select{width:100%;border:1px solid #333;background:#080808;color:#fff;border-radius:16px;padding:13px;margin-top:8px}textarea{min-height:170px}.leadlist{max-height:280px;overflow:auto}.lead{display:grid;grid-template-columns:1fr auto;gap:10px;border-bottom:1px solid #171717;padding:12px 0}.pill{border:1px solid #333;border-radius:999px;padding:6px 10px;color:#ccc;font-size:12px}.success{color:#9dffb1}.error{color:#ff9d9d}.small{font-size:13px}.brand{letter-spacing:6px;text-transform:uppercase;color:#aaa;font-size:12px}.notice{border-left:3px solid #fff;padding-left:12px;color:#ddd}.footer{padding:20px;text-align:center;color:#777}</style>
+</head>
+<body>
+<main>
+  <section class="hero">
+    <div class="brand">Empire Company Unlimited</div>
+    <h1>Empire Outreach OS</h1>
+    <p class="muted">A real deployable outreach dashboard: leads, CSV import, campaigns, Zoho SMTP sending, SQLite storage, and Render deployment.</p>
+    <div class="row"><button class="btn" onclick="loadAll()">Refresh Dashboard</button><a class="btn dark" href="/api/export.csv">Export CSV</a></div>
+  </section>
+
+  <section class="grid">
+    <div class="card"><div class="muted">Total Leads</div><div id="total" class="stat">0</div></div>
+    <div class="card"><div class="muted">New</div><div id="new" class="stat">0</div></div>
+    <div class="card"><div class="muted">Sent</div><div id="sent" class="stat">0</div></div>
+    <div class="card"><div class="muted">Failed</div><div id="failed" class="stat">0</div></div>
+  </section>
+
+  <section class="grid">
+    <div class="card">
+      <h2>Add Leads</h2>
+      <p class="muted small">Paste one email per line. Optional CSV format: email, first_name, company, website.</p>
+      <textarea id="leadPaste" placeholder="owner@example.com\nhello@company.com"></textarea>
+      <button class="btn" onclick="addPastedLeads()">Add Pasted Leads</button>
+      <hr style="border-color:#191919">
+      <input type="file" id="csvFile" accept=".csv" />
+      <button class="btn dark" onclick="importCsv()">Import CSV</button>
+      <p id="leadMsg" class="small"></p>
+    </div>
+
+    <div class="card">
+      <h2>Create Campaign</h2>
+      <label>Campaign Name</label><input id="campaignName" value="Professional Email Setup Outreach" />
+      <label>Offer</label><input id="offer" value="Professional Email Setup" />
+      <button class="btn dark" onclick="generateTemplate()">Generate Template</button>
+      <label>Subject</label><input id="subject" value="Quick professional email question" />
+      <label>Email Body</label><textarea id="body">Hi {{first_name}},
+
+Quick question. If two businesses offered the exact same service, but one used a Gmail address and the other used a professional company email, which one would look more trusted before the client even replied?
+
+That tiny detail can change how people judge {{company}}.
+
+Empire Company Unlimited helps businesses set up professional domain email systems so the first impression matches the standard of the business.
+
+Would you like me to show you what this could look like for {{company}}?
+
+Kind regards,
+Empire Company Unlimited</textarea>
+      <button class="btn" onclick="createCampaign()">Save Campaign</button>
+      <p id="campaignMsg" class="small"></p>
+    </div>
+  </section>
+
+  <section class="grid">
+    <div class="card">
+      <h2>Send Test Email</h2>
+      <p class="notice small">Use this before sending a campaign. It confirms Zoho SMTP is working.</p>
+      <input id="testTo" placeholder="Send test to email address" />
+      <button class="btn" onclick="sendTest()">Send Test</button>
+      <p id="testMsg" class="small"></p>
+    </div>
+
+    <div class="card">
+      <h2>Campaigns</h2>
+      <div id="campaigns"></div>
+      <p id="sendMsg" class="small"></p>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Leads</h2>
+    <div id="leads" class="leadlist"></div>
+  </section>
+</main>
+<div class="footer">Empire Outreach OS · Built for controlled, permission-aware business outreach.</div>
+<script>
+async function api(path, opts={}){const r=await fetch(path,{headers:{'Content-Type':'application/json'},...opts});const data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.error||'Request failed');return data}
+async function loadAll(){try{const s=await api('/api/stats');total.textContent=s.total;new.textContent=s.new;sent.textContent=s.sent;failed.textContent=s.failed;const leadsData=await api('/api/leads');leads.innerHTML=leadsData.map(l=>`<div class="lead"><div><b>${l.email}</b><div class="muted small">${l.first_name||'No name'} · ${l.company||'No company'} · ${l.website||''}</div></div><span class="pill">${l.status}</span></div>`).join('')||'<p class="muted">No leads yet.</p>';const c=await api('/api/campaigns');campaigns.innerHTML=c.map(x=>`<div class="lead"><div><b>${x.name}</b><div class="muted small">${x.subject}</div></div><button class="btn dark" onclick="startCampaign(${x.id})">Start</button></div>`).join('')||'<p class="muted">No campaigns yet.</p>'}catch(e){alert(e.message)}}
+async function addPastedLeads(){const lines=leadPaste.value.split(/\n+/).map(x=>x.trim()).filter(Boolean);const leads=lines.map(email=>({email}));try{const r=await api('/api/leads',{method:'POST',body:JSON.stringify({leads})});leadMsg.innerHTML=`<span class="success">Added ${r.added} leads.</span>`;leadPaste.value='';loadAll()}catch(e){leadMsg.innerHTML=`<span class="error">${e.message}</span>`}}
+async function importCsv(){const file=csvFile.files[0];if(!file)return leadMsg.textContent='Choose a CSV first.';const fd=new FormData();fd.append('file',file);try{const r=await fetch('/api/import-csv',{method:'POST',body:fd});const d=await r.json();if(!r.ok)throw new Error(d.error);leadMsg.innerHTML=`<span class="success">Imported ${d.added} leads.</span>`;loadAll()}catch(e){leadMsg.innerHTML=`<span class="error">${e.message}</span>`}}
+async function generateTemplate(){try{const r=await api('/api/generate',{method:'POST',body:JSON.stringify({offer:offer.value})});subject.value=r.subject;body.value=r.body}catch(e){campaignMsg.innerHTML=`<span class="error">${e.message}</span>`}}
+async function createCampaign(){try{const r=await api('/api/campaigns',{method:'POST',body:JSON.stringify({name:campaignName.value,offer:offer.value,subject:subject.value,body:body.value})});campaignMsg.innerHTML=`<span class="success">Campaign saved.</span>`;loadAll()}catch(e){campaignMsg.innerHTML=`<span class="error">${e.message}</span>`}}
+async function sendTest(){try{await api('/api/send-test',{method:'POST',body:JSON.stringify({to:testTo.value,subject:subject.value,body:body.value})});testMsg.innerHTML='<span class="success">Test sent. Check inbox.</span>'}catch(e){testMsg.innerHTML=`<span class="error">${e.message}</span>`}}
+async function startCampaign(id){if(!confirm('Start campaign now? This will send to new leads up to your daily limit.'))return;try{const r=await api('/api/start-campaign/'+id,{method:'POST'});sendMsg.innerHTML=`<span class="success">Sent ${r.sent}, failed ${r.failed}</span>`;loadAll()}catch(e){sendMsg.innerHTML=`<span class="error">${e.message}</span>`}}
+loadAll();
+</script>
+</body>
+</html>

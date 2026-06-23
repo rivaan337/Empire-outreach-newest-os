@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: empire-outreach-os
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: ZOHO_SMTP_HOST
+        value: smtp.zoho.com
+      - key: ZOHO_SMTP_PORT
+        value: 465
+      - key: ZOHO_SMTP_SECURE
+        value: true
+      - key: ZOHO_SMTP_USER
+        sync: false
+      - key: ZOHO_SMTP_PASS
+        sync: false
+      - key: FROM_NAME
+        value: Empire Company Unlimited
+      - key: DAILY_SEND_LIMIT
+        value: 25
+      - key: SEND_DELAY_SECONDS
+        value: 180
