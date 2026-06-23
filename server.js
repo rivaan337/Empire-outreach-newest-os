@@ -10,7 +10,7 @@ const { parse } = require('@fast-csv/parse');
 const path = require('path');
 const fs = require('fs');
 
-const app = express();
+const app = express();app.use(express.static(__dirname));
 const PORT = process.env.PORT || 3000;
 const upload = multer({ storage: multer.memoryStorage() });
 const db = new Database(process.env.DB_PATH || path.join(__dirname, 'empire-outreach.sqlite'));
@@ -218,6 +218,6 @@ app.get('/api/export.csv', (req, res) => {
   res.send(header + lines.join('\n'));
 });
 
-app.get('*', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
+app.app.get('*', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
 
 app.listen(PORT, () => console.log(`Empire Outreach OS running on port ${PORT}`));
